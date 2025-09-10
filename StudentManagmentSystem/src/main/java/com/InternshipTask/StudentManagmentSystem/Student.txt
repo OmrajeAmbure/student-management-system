@@ -1,0 +1,460 @@
+package com.InternshipTask.StudentManagmentSystem;# Student Management System — Step-by-step projects (Spring Boot)
+
+> A complete set of step-by-step project blueprints — from a **simple CRUD** to **microservices + CI/CD + monitoring** — to build Student Management System variants using Spring Boot. Each project contains: objective, tech stack, folder structure, dependencies, step-by-step instructions, key code snippets, and testing/deployment pointers.
+
+---
+
+## Table of contents
+
+1. Project 1 — Basic CRUD (Spring Boot, Spring Data JPA, H2, Thymeleaf)
+2. Project 2 — RESTful API with MySQL + Validation + Global Error Handling
+3. Project 3 — REST API + React frontend (Axios) + CORS
+4. Project 4 — Authentication & Authorization (Spring Security + JWT + Roles)
+5. Project 5 — File upload (student profile images) — local + AWS S3 option
+6. Project 6 — Export / Import (Excel, CSV, PDF)
+7. Project 7 — Pagination, Sorting, Searching, Filtering
+8. Project 8 — Email notifications, scheduled jobs, audit logs
+9. Project 9 — Dockerize & Docker Compose (app + MySQL/Redis)
+10. Project 10 — Microservices architecture (Student Service, Auth Service, Gateway, Config, Eureka) + Eventing (Kafka)
+11. Project 11 — Caching & Performance (Redis, Spring Cache)
+12. Project 12 — Testing, CI/CD (GitHub Actions), Monitoring (Actuator + Prometheus + Grafana)
+
+---
+
+> **How to use this doc:** Pick a project from the list. Each section is a self-contained tutorial you can follow in sequence. I included minimal code examples and commands. If you want, I can generate starter code for any project (complete repo) or a zip with working example.
+
+---
+
+# Project 1 — Basic CRUD (Spring Boot, Spring Data JPA, H2, Thymeleaf)
+
+**Objective:** Make a web application to Create / Read / Update / Delete students using server-side rendered pages.
+
+**Tech stack:** Spring Boot, Spring Data JPA, H2 (in-memory), Thymeleaf, Maven, Lombok (optional)
+
+**Folder structure (suggested):**
+
+```
+student-crud/
+ ├─ src/main/java/com/example/student/
+ │   ├─ controller/
+ │   ├─ model/
+ │   ├─ repository/
+ │   └─ service/
+ └─ src/main/resources/templates/
+     ├─ students/list.html
+     └─ students/form.html
+```
+
+**Steps (detailed):**
+
+1. **Create project**
+
+   * Use Spring Initializr ([https://start.spring.io](https://start.spring.io)) or IntelliJ: Group=`com.example`, Artifact=`student-crud`.
+   * Add dependencies: `Spring Web`, `Spring Data JPA`, `H2 Database`, `Thymeleaf`, `Lombok` (optional).
+
+2. **pom.xml (dependencies snippet)**
+
+```xml
+<!-- add these starters -->
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-thymeleaf</artifactId>
+</dependency>
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+<dependency>
+  <groupId>com.h2database</groupId>
+  <artifactId>h2</artifactId>
+  <scope>runtime</scope>
+</dependency>
+<dependency>
+  <groupId>org.projectlombok</groupId>
+  <artifactId>lombok</artifactId>
+  <optional>true</optional>
+</dependency>
+```
+
+3. **application.properties (dev)**
+
+```
+spring.datasource.url=jdbc:h2:mem:studentsdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.jpa.hibernate.ddl-auto=update
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2-console
+```
+
+4. **Entity: Student** (use improved model with `@Entity`, `@Id`, `@GeneratedValue`)
+
+```java
+@Entity
+public class Student {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String name;
+    private String email;
+    private String course;
+    private LocalDate dateOfJoining;
+    // getters/setters
+}
+```
+
+5. **Repository**
+
+```java
+public interface StudentRepository extends JpaRepository<Student, Long> {}
+```
+
+6. **Service layer** (business logic)
+
+```java
+@Service
+public class StudentService {
+  private final StudentRepository repo;
+  public StudentService(StudentRepository repo){ this.repo = repo; }
+  public List<Student> findAll(){ return repo.findAll(); }
+  public Student save(Student s){ return repo.save(s); }
+  // getById, delete
+}
+```
+
+7. **Controller (Thymeleaf)**
+
+```java
+@Controller
+@RequestMapping("/students")
+public class StudentController {
+  private final StudentService service;
+  @GetMapping
+  public String list(Model model){ model.addAttribute("students", service.findAll()); return "students/list"; }
+  @GetMapping("/new") public String form(Model m){ m.addAttribute("student", new Student()); return "students/form"; }
+  @PostMapping("/save") public String save(Student student){ service.save(student); return "redirect:/students"; }
+}
+```
+
+8. **Thymeleaf templates** — simple `list.html` and `form.html`
+
+   * `list.html`: iterate students, show Edit/Delete buttons, link to create new.
+   * `form.html`: form with fields and submit to `/students/save`.
+
+9. **Run & test**
+
+   * `mvn spring-boot:run` and open `http://localhost:8080/students`. Use H2 console at `/h2-console`.
+
+10. **Extras**
+
+* Add validation with `@Valid` and `BindingResult`.
+* Use flash attributes for messages.
+
+---
+
+# Project 2 — RESTful API with MySQL + Validation + Global Error Handling
+
+**Objective:** Build a pure REST backend for students with persistent MySQL storage and robust validation and error handling.
+
+**Tech stack:** Spring Boot, Spring Data JPA, MySQL, Lombok, Jakarta Validation (hibernate-validator), Spring Boot DevTools
+
+**Steps:**
+
+1. **Create project** — use Spring Initializr: add `Spring Web`, `Spring Data JPA`, `MySQL Driver`, `Validation`.
+
+2. **application.properties**
+
+```
+spring.datasource.url=jdbc:mysql://localhost:3306/studentsdb?useSSL=false&serverTimezone=UTC
+spring.datasource.username=root
+spring.datasource.password=yourpassword
+spring.jpa.hibernate.ddl-auto=update
+```
+
+3. **DTO & Validation**
+
+```java
+public class StudentDTO {
+  @NotBlank private String name;
+  @Email @NotBlank private String email;
+  private String course;
+  private LocalDate dateOfJoining;
+}
+```
+
+4. **Controller (REST)**
+
+```java
+@RestController
+@RequestMapping("/api/students")
+public class StudentRestController {
+  @GetMapping public List<StudentDTO> getAll(){ ... }
+  @PostMapping public ResponseEntity<StudentDTO> create(@Valid @RequestBody StudentDTO dto){ ... }
+  @GetMapping("/{id}") public ResponseEntity<StudentDTO> get(@PathVariable Long id){ ... }
+}
+```
+
+5. **Global exception handler**
+
+```java
+@ControllerAdvice
+public class GlobalExceptionHandler {
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<Map<String,String>> handleValidation(MethodArgumentNotValidException ex){ ... }
+  @ExceptionHandler(EntityNotFoundException.class)
+  public ResponseEntity<ApiError> handleNotFound(EntityNotFoundException ex){ ... }
+}
+```
+
+6. **Testing**
+
+   * Use Postman to run requests. Add sample JSON for POST.
+
+7. **Extras**
+
+   * Add paging and sorting (see Project 7).
+   * Add HATEOAS links (if desired).
+
+---
+
+# Project 3 — REST API + React frontend (Axios) + CORS
+
+**Objective:** Build a modern UI with React that consumes the Student REST API.
+
+**Tech stack:** Spring Boot (backend), React (frontend), Axios, React Router, Bootstrap or Tailwind.
+
+**Steps:**
+
+1. **Backend**: Use Project 2 REST API. Add CORS config:
+
+```java
+@Bean
+public WebMvcConfigurer corsConfigurer() {
+  return new WebMvcConfigurer() {
+    @Override public void addCorsMappings(CorsRegistry registry) {
+      registry.addMapping("/api/**").allowedOrigins("http://localhost:3000");
+    }
+  };
+}
+```
+
+2. **Create React app**: `npx create-react-app student-frontend` (or Vite). Folder structure:
+
+```
+src/
+ ├─ components/
+ ├─ pages/
+ └─ services/ (axios wrappers)
+```
+
+3. **Axios service** (`services/studentService.js`)
+
+```js
+import axios from 'axios';
+export const api = axios.create({ baseURL: 'http://localhost:8080/api' });
+export const getStudents = () => api.get('/students');
+```
+
+4. **Components**
+
+   * `StudentList` fetches students and renders table
+   * `StudentForm` creates/edits student
+   * `Navbar`, `Routes` for `/`, `/students/new`, `/students/:id`
+
+5. **Run**
+
+   * Start backend (`mvn spring-boot:run`) and frontend (`npm start`).
+
+---
+
+# Project 4 — Authentication & Authorization (Spring Security + JWT + Roles)
+
+**Objective:** Secure the REST API with role-based access control (Admin, USER) using JWT tokens.
+
+**Tech stack:** Spring Security, JWT (jjwt or java-jwt), Spring Data JPA, BCryptPasswordEncoder
+
+**High-level steps:**
+
+1. Add dependencies: `spring-boot-starter-security`, JWT library.
+
+2. **User & Role entities**
+
+   * `User` with fields: id, username, email, password, Set<Role> roles.
+   * `Role` with roleName (e.g., `ROLE_ADMIN`, `ROLE_USER`).
+
+3. **Password encoding**
+
+```java
+@Bean
+public PasswordEncoder passwordEncoder(){ return new BCryptPasswordEncoder(); }
+```
+
+4. **Authentication endpoints** — `/auth/register`, `/auth/login`.
+
+   * On login, validate credentials and generate JWT with claims (username, roles).
+
+5. **JWT filter**
+
+   * Implement `OncePerRequestFilter` to parse Authorization header, validate token, set `UsernamePasswordAuthenticationToken` in SecurityContext.
+
+6. **Security config**
+
+   * Permit `/auth/**` endpoints, secure `/api/**` and restrict by roles (e.g., Admin can DELETE students).
+
+7. **Testing**
+
+   * Use Postman to register/login and include `Authorization: Bearer <token>` for protected calls.
+
+**Notes:** Keep token expiry and refresh token strategy in mind for production.
+
+---
+
+# Project 5 — File upload (student profile images) — local disk and AWS S3
+
+**Objective:** Allow uploading student profile pictures and serve them (local or S3).
+
+**Steps (local storage):**
+
+1. Add an endpoint: `@PostMapping("/students/{id}/upload")` accepting `MultipartFile`.
+2. Save to a folder `uploads/` and store file path/URL in Student entity.
+3. Serve static resources by adding `spring.web.resources.static-locations=classpath:/static/,file:uploads/` in `application.properties`.
+
+**Steps (AWS S3):**
+
+1. Add AWS SDK dependency and S3 client config (accessKey, secret, bucket name) — use IAM roles in prod.
+2. On upload, stream file to S3 and save the returned object URL in DB.
+3. Make sure bucket CORS allows serving images.
+
+---
+
+# Project 6 — Export / Import (Excel, CSV, PDF)
+
+**Objective:** Provide endpoints to export students list to Excel/CSV/PDF and import students from Excel/CSV.
+
+**Libraries:** Apache POI (Excel), OpenCSV (CSV), iText or PDFBox (PDF)
+
+**Steps (export Excel):**
+
+1. Create service method that builds a workbook using Apache POI and writes rows from student list.
+2. Controller endpoint `/api/students/export/excel` returns `application/vnd.ms-excel` with workbook stream.
+
+**Steps (import Excel):**
+
+1. Endpoint accepts `MultipartFile`, parse workbook with Apache POI, map rows to DTOs and save.
+
+---
+
+# Project 7 — Pagination, Sorting, Searching, Filtering
+
+**Objective:** Implement pageable endpoints and flexible searching/filtering for large datasets.
+
+**Steps:**
+
+1. Use Spring Data `Pageable` in repository methods: `Page<Student> findAll(Pageable pageable)`.
+2. Controller: accept `page`, `size`, `sort` query params and pass `PageRequest.of(page, size, Sort.by(...))`.
+3. For advanced filtering, use `Specifications` (JPA Criteria API) or `Querydsl`.
+
+**Sample endpoint:** `GET /api/students?page=0&size=20&sort=name,asc&search=om`.
+
+---
+
+# Project 8 — Email notifications, scheduled jobs, audit logs
+
+**Email notifications**
+
+* Use `spring-boot-starter-mail` and configure SMTP properties (Gmail/SendGrid). Use Thymeleaf templates for email bodies.
+
+**Scheduled jobs**
+
+* Add `@EnableScheduling` and scheduled tasks with `@Scheduled(cron = "0 0 1 * * ?")` to generate daily reports or cleanups.
+
+**Audit logs**
+
+* Use Spring Data JPA `@CreatedDate`, `@LastModifiedDate` (enable `@EnableJpaAuditing`) or use an `Auditable` base class to track createdBy, modifiedBy.
+
+---
+
+# Project 9 — Dockerize & Docker Compose
+
+**Objective:** Containerize the app and run app + MySQL (and Redis if used) via docker-compose.
+
+**Dockerfile (multi-stage, Maven)**
+
+```dockerfile
+# build stage
+FROM maven:3.8.6-openjdk-17 AS build
+WORKDIR /app
+COPY pom.xml .
+COPY src ./src
+RUN mvn -B -DskipTests package
+
+# run stage
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+ENTRYPOINT ["java","-jar","/app/app.jar"]
+```
+
+**docker-compose.yml**
+
+```yaml
+version: '3.8'
+services:
+  app:
+    build: .
+    ports: ['8080:8080']
+    depends_on: ['db']
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/studentsdb?useSSL=false
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: studentsdb
+    volumes:
+      - db_data:/var/lib/mysql
+volumes:
+  db_data:
+```
+
+Run: `docker-compose up --build`.
+
+---
+
+# Project 10 — Microservices architecture (Student Service, Auth Service, Gateway, Config, Eureka) + Eventing
+
+**Objective:** Split the monolith into microservices for scalability and separation of concerns.
+
+**Services:**
+
+* **Config Server** (Spring Cloud Config)
+* **Eureka Discovery Server**
+* **API Gateway** (Spring Cloud Gateway)
+* **Auth Service** (handles users, JWT issuance)
+* **Student Service** (CRUD + business logic)
+* **Notification Service** (emails/events)
+
+**High-level steps:**
+
+1. Create each Spring Boot service with the appropriate dependencies (Spring Cloud, Eureka Client, Config Client, Gateway, Kafka).
+2. Use an event broker (Kafka / RabbitMQ) to publish student events (`StudentCreated`, `StudentUpdated`) so other services can react.
+3. Use Docker and Docker Compose or Kubernetes for orchestration.
+4. Secure interservice calls with OAuth2 or mTLS or by verifying JWT tokens at gateway.
+
+**Notes:** This is advanced — start with simple monolith and then split by moving the Student controller into its own service.
+
+---
+
+# Project 11 — Caching & Performance (Redis)
+
+**Objective:** Improve performance for frequent read operations using Redis caching.
+
+**Steps:**
+
+1. Add `spring-boot-starter-data-redis` and run a Redis instance (Docker).
+2. Enable cache: `@EnableCaching` and annotate read methods with

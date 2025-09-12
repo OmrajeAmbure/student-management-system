@@ -3,12 +3,13 @@ package com.InternshipTask.StudentManagmentSystem.Controller;
 import com.InternshipTask.StudentManagmentSystem.Models.StudentModel;
 import com.InternshipTask.StudentManagmentSystem.Service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/student")
+@RequestMapping("/api/student")
 public class StudentController {
     @Autowired
     public StudentService service;
@@ -23,11 +24,13 @@ public class StudentController {
         return service.getStudentList();
     }
     @PutMapping("/update-course/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String updateCourse(@PathVariable int id,@RequestBody String newCourse){
         service.updateCourse(id,newCourse);
         return "Course Update Successfully ";
     }
     @DeleteMapping("/delete-student/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public String deleteStudent(@PathVariable int id){
         service.deleteStudent(id);
         return "Student Deleted Successfully";

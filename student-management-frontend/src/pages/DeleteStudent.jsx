@@ -16,7 +16,7 @@ export default function DeleteStudent() {
     };
 
     return (
-        <div className="card p-4 col-md-6 offset-md-3">
+        <div className="card p-4 col-md-6 offset-md-3 mt-4">
             <h2>Delete Student</h2>
             <form onSubmit={handleSubmit}>
                 <input

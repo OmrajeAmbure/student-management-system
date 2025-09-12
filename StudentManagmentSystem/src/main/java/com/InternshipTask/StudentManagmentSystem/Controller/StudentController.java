@@ -24,13 +24,11 @@ public class StudentController {
         return service.getStudentList();
     }
     @PutMapping("/update-course/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public String updateCourse(@PathVariable int id,@RequestBody String newCourse){
         service.updateCourse(id,newCourse);
         return "Course Update Successfully ";
     }
     @DeleteMapping("/delete-student/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public String deleteStudent(@PathVariable int id){
         service.deleteStudent(id);
         return "Student Deleted Successfully";

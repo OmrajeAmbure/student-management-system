@@ -1,16 +1,4 @@
 # ----------------------------
-# Stage 1: Build React frontend
-# ----------------------------
-FROM node:20-alpine AS frontend
-WORKDIR /frontend
-
-COPY student-management-frontend/package*.json ./
-RUN npm install
-
-COPY student-management-frontend/ ./
-RUN npm run build
-
-# ----------------------------
 # Stage 2: Build Spring Boot backend
 # ----------------------------
 FROM eclipse-temurin:21-jdk-alpine

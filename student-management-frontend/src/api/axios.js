@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-    baseURL: "http://localhost:8080", // no need for http://localhost:8080
+    baseURL: "https://student-management-system-jitf.onrender.com", // no need for http://localhost:8080
 });
 
 // Attach JWT token automatically

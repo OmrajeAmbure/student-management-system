@@ -1,34 +1,36 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 export default function Navbar() {
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
+    const [isOpen, setIsOpen] = useState(false);
 
     const handleLogout = () => {
         localStorage.removeItem("token");
         navigate("/login");
     };
 
+    const toggleNavbar = () => setIsOpen(!isOpen);
+
     return (
         <nav className="navbar navbar-expand-lg navbar-light bg-light">
             <div className="container">
                 <Link className="navbar-brand" to="/">StudentApp</Link>
 
-                {/* 👇 This is the missing toggler */}
                 <button
                     className="navbar-toggler"
                     type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent"
+                    onClick={toggleNavbar}
                     aria-controls="navbarSupportedContent"
-                    aria-expanded="false"
+                    aria-expanded={isOpen}
                     aria-label="Toggle navigation"
                 >
                     <span className="navbar-toggler-icon"></span>
                 </button>
 
                 <div
-                    className="collapse navbar-collapse justify-content-end"
+                    className={`collapse navbar-collapse justify-content-end ${isOpen ? 'show' : ''}`}
                     id="navbarSupportedContent"
                 >
                     <ul className="navbar-nav align-items-center">

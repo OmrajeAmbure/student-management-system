@@ -74,10 +74,17 @@ public class SecurityConfig {
     }
 
     // ✅ CORS Configuration for React frontend
+    // ✅ CORS Configuration for both local dev and Render
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // React dev server
+
+        // Replace the second entry with your actual Render frontend URL
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:5173",                       // local dev
+                "https://student-management-system-jitf.onrender.com" // your Render frontend URL
+        ));
+
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
